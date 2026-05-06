@@ -1,8 +1,0 @@
-{
-  "name": "commitron",
-  "description": "Atomic commit engine — one invocation, one conventional commit, zero index conflicts. Uses GIT_INDEX_FILE isolation for safe multi-agent operation.",
-  "author": {
-    "name": "kent"
-  },
-  "repository": "https://github.com/SakuraPuare/commitron"
-}

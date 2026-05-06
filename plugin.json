@@ -1,0 +1,19 @@
+{
+  "name": "commitron",
+  "version": "1.0.0",
+  "description": "Atomic commit engine — one invocation, one conventional commit, zero index conflicts. Uses GIT_INDEX_FILE isolation for safe multi-agent operation. Use when: '提交', 'commit', '原子提交', '拆分提交', '帮我提交代码'.",
+  "author": {
+    "name": "kent",
+    "url": "https://github.com/SakuraPuare"
+  },
+  "homepage": "https://github.com/SakuraPuare/commitron",
+  "repository": "https://github.com/SakuraPuare/commitron",
+  "license": "MIT",
+  "keywords": [
+    "git",
+    "atomic-commit",
+    "conventional-commits",
+    "multi-agent",
+    "claude-code"
+  ]
+}
