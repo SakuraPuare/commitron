@@ -1,0 +1,20 @@
+{
+  "name": "commitron",
+  "description": "Atomic commit engine for Claude Code — one invocation, one conventional commit, zero index conflicts via GIT_INDEX_FILE isolation.",
+  "owner": {
+    "name": "kent",
+    "url": "https://github.com/SakuraPuare"
+  },
+  "plugins": [
+    {
+      "name": "commitron",
+      "description": "Atomic commit engine — splits changes into minimal conventional commits, one per invocation. Multi-agent safe via private index isolation.",
+      "version": "1.0.0",
+      "source": "./",
+      "author": {
+        "name": "kent",
+        "url": "https://github.com/SakuraPuare"
+      }
+    }
+  ]
+}
