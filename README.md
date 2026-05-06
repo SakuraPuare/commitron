@@ -15,10 +15,20 @@ Atomic commit engine for [Claude Code](https://docs.anthropic.com/en/docs/claude
 ## Install
 
 ```bash
+# First time: add the marketplace
+claude plugins marketplace add SakuraPuare/commitron
+
+# Install
+claude plugins install commitron
+```
+
+To update later:
+
+```bash
 # Refresh marketplace cache first, then update
 # (skipping the first step may install an old cached version)
 claude plugins marketplace update
-claude plugins install commitron
+claude plugins update commitron@commitron
 ```
 
 ## Usage
