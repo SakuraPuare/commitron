@@ -2,7 +2,7 @@
   "name": "commitron",
   "description": "Atomic commit engine for Claude Code — one invocation, one conventional commit, zero index conflicts via GIT_INDEX_FILE isolation.",
   "owner": {
-    "name": "kent",
+    "name": "SakuraPuare",
     "url": "https://github.com/SakuraPuare"
   },
   "plugins": [
@@ -12,7 +12,7 @@
       "version": "1.1.0",
       "source": "./",
       "author": {
-        "name": "kent",
+        "name": "SakuraPuare",
         "url": "https://github.com/SakuraPuare"
       }
     }
