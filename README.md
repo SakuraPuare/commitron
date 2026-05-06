@@ -1,10 +1,11 @@
 # Commitron
 
-Atomic commit engine for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). One invocation, one conventional commit, zero index conflicts.
+Atomic commit engine for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Conventional commits, zero index conflicts.
 
 ## Features
 
 - **One commit per call** — refuses to batch multiple logical changes
+- **Batch mode** — `commit-all` splits all changes into multiple atomic commits automatically
 - **Conventional Commits** — `type(scope): subject` + mandatory body
 - **Strict isolation** — uses `GIT_INDEX_FILE` for private staging, safe with parallel agents
 - **Language matching** — auto-detects commit history language (中文/English/etc.)
@@ -14,7 +15,9 @@ Atomic commit engine for [Claude Code](https://docs.anthropic.com/en/docs/claude
 ## Install
 
 ```bash
-claude plugins marketplace add SakuraPuare/commitron
+# Refresh marketplace cache first, then update
+# (skipping the first step may install an old cached version)
+claude plugins marketplace update
 claude plugins install commitron
 ```
 
@@ -22,12 +25,10 @@ claude plugins install commitron
 
 In Claude Code, just say:
 
-- "提交"
-- "commit"
-- "原子提交"
-- "帮我提交代码"
+- "提交" / "commit" / "原子提交" — single atomic commit
+- "全部提交" / "commit all" — split all changes into multiple atomic commits automatically
 
-Commitron will analyze your changes, determine the smallest atomic unit, stage only the relevant files into an isolated index, and commit with a properly formatted message.
+Commitron will analyze your changes, determine the smallest atomic units, stage only the relevant files into an isolated index, and commit with properly formatted messages.
 
 ## How It Works
 
