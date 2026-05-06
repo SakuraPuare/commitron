@@ -14,13 +14,8 @@ Atomic commit engine for [Claude Code](https://docs.anthropic.com/en/docs/claude
 ## Install
 
 ```bash
-claude mcp add-skill commitron -- gh://SakuraPuare/commitron
-```
-
-Or clone and add locally:
-
-```bash
-git clone https://github.com/SakuraPuare/commitron.git ~/.claude/skills/commitron
+claude plugins marketplace add SakuraPuare/commitron
+claude plugins install commitron
 ```
 
 ## Usage
