@@ -36,12 +36,14 @@ description: 原子提交 — 将当前变更拆分为最小不可再分的 conv
 使用 `--only` 隔离提交，git 内部处理临时 index 和主 index 同步：
 
 ```bash
-git commit --only -- <specific-files> -F - <<'EOF'
+git commit --only -F - -- <specific-files> <<'EOF'
 <type>(<scope>): <subject>
 
 <body>
 EOF
 ```
+
+**顺序关键**：`-F -` 必须放在 `--` **之前**。`--` 之后的所有 token 都会被 git 当作 pathspec，若写成 `-- <files> -F -` 会得到 `路径规格 '-F' 未匹配任何 Git 已知文件`。
 
 如果需要拆分 hunk（只提交文件的部分变更），先用 patch 暂存再提交：
 

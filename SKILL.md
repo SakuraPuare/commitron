@@ -20,7 +20,7 @@ Use this skill when the user wants the current git changes committed atomically.
 
 1. Read `git status`, cached diff stat, unstaged diff stat, recent commit subjects, and the current branch.
 2. Identify the smallest logical commit units.
-3. Use `git commit --only -- <files>` to isolate the current unit.
+3. Use `git commit --only -F - -- <files>` to isolate the current unit. The `-F -` flag must come **before** `--`; anything after `--` is treated as a pathspec, so `-- <files> -F -` will fail with `路径规格 '-F' 未匹配任何 Git 已知文件`.
 4. If a file needs partial staging, stage the needed hunk with a patch, commit, then clean up the index.
 5. Report what was committed, what remains, and the next atomic unit if any.
 
