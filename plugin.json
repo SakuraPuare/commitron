@@ -1,6 +1,6 @@
 {
   "name": "commitron",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Atomic commit engine — one invocation, one conventional commit, zero index conflicts. Uses git commit --only for safe multi-agent operation. Use when: '提交', 'commit', '原子提交', '拆分提交', '帮我提交代码'.",
   "author": {
     "name": "SakuraPuare",
