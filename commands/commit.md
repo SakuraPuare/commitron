@@ -1,6 +1,6 @@
 ---
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git commit:*), Bash(git read-tree:*), Bash(git reset:*), Bash(git apply:*), Bash(mktemp:*), Bash(rm:*)
-description: 原子提交 — 将当前变更拆分为最小不可再分的 conventional commit，每次调用只产生一个 commit。使用 GIT_INDEX_FILE 隔离，多 agent 安全。
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git commit:*), Bash(git reset:*), Bash(git apply:*), Bash(filterdiff:*)
+description: 原子提交 — 将当前变更拆分为最小不可再分的 conventional commit，每次调用只产生一个 commit。使用 git commit --only 隔离，多 agent 安全。
 ---
 
 ## Context
@@ -31,28 +31,28 @@ description: 原子提交 — 将当前变更拆分为最小不可再分的 conv
 - 原子边界：逻辑上不可再分的最小变更单元
 - Commit message 语言：匹配最近 5 条 commit 的语言
 
-#### 2. 用临时 index 隔离提交
+#### 2. 提交
 
-使用 `GIT_INDEX_FILE` 创建私有 index，完全不碰主 `.git/index`：
+使用 `--only` 隔离提交，git 内部处理临时 index 和主 index 同步：
 
 ```bash
-TMPIDX=$(mktemp)
-GIT_INDEX_FILE="$TMPIDX" git read-tree HEAD
-GIT_INDEX_FILE="$TMPIDX" git add <specific-files>
-GIT_INDEX_FILE="$TMPIDX" git commit -F - <<'EOF'
+git commit --only -- <specific-files> -F - <<'EOF'
 <type>(<scope>): <subject>
 
 <body>
 EOF
-rm -f "$TMPIDX"
 ```
 
-如果需要拆分 hunk，用 patch 方式：
+如果需要拆分 hunk（只提交文件的部分变更），先用 patch 暂存再提交：
 
 ```bash
-git diff <file> > /tmp/commitron-patch.diff
-# 编辑 patch 保留需要的 hunk
-GIT_INDEX_FILE="$TMPIDX" git apply --cached /tmp/commitron-patch.diff
+git diff <file> | filterdiff --hunks=<需要的hunk编号> | git apply --cached
+git commit -F - <<'EOF'
+<type>(<scope>): <subject>
+
+<body>
+EOF
+git reset HEAD -- <file>
 ```
 
 #### 3. Commit Message 格式
