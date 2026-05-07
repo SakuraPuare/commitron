@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commitron"
+  short_description: "Atomic git commits from current changes"
+  default_prompt: "Use $commitron to split the current git changes into atomic conventional commits."
