@@ -6,6 +6,7 @@ description: 原子提交 — 将当前变更拆分为最小不可再分的 conv
 ## Context
 
 - Current git status: !`git status`
+- Tracked vs untracked (untracked = 需先 add): !`git status --porcelain`
 - Current staged changes: !`git diff --cached --stat`
 - Current unstaged changes: !`git diff --stat`
 - Recent commits (for language matching): !`git log -5 --format="%s"`
@@ -20,7 +21,7 @@ description: 原子提交 — 将当前变更拆分为最小不可再分的 conv
 - 每次调用只产生 **一个** commit
 - 禁止单行 commit（必须有 body）
 - 不加 Co-authored-by 或任何 trailer
-- 不用 `git add .` / `git add -A`
+- 不用 `git add .` / `git add -A`；但**允许** `git add -- <具体文件>`，untracked 文件必须先这样纳入 index（见下）
 - 不用 `--no-verify` / `--amend`
 
 ### 执行流程
@@ -30,34 +31,58 @@ description: 原子提交 — 将当前变更拆分为最小不可再分的 conv
 根据上面的 Context 信息，确定：
 - 原子边界：逻辑上不可再分的最小变更单元
 - Commit message 语言：匹配最近 5 条 commit 的语言
+- 本单元里哪些是 untracked（`git status --porcelain` 里以 `??` 开头）
 
-#### 2. 提交
+#### 2. 先纳入 untracked 文件
 
-使用 `--only` 隔离提交，git 内部处理临时 index 和主 index 同步：
+`git commit --only` 只能提交 git 已跟踪的文件，untracked 文件会让它报
+`pathspec '<file>' did not match any file(s) known to git`。本单元若含 untracked
+文件，先纳入 index（只 add 本单元的文件，不影响其他 agent 已暂存的内容）：
 
 ```bash
-git commit --only -F - -- <specific-files> <<'EOF'
-<type>(<scope>): <subject>
-
-<body>
-EOF
+git add -- <本单元的untracked文件>
 ```
 
-**顺序关键**：`-F -` 必须放在 `--` **之前**。`--` 之后的所有 token 都会被 git 当作 pathspec，若写成 `-- <files> -F -` 会得到 `路径规格 '-F' 未匹配任何 Git 已知文件`。
+#### 3. 提交
 
-如果需要拆分 hunk（只提交文件的部分变更），先用 patch 暂存再提交：
+把 message 写进临时文件用 `-F <path>` 传入，避免 `-F -` + heredoc 的脆弱写法：
+
+```bash
+printf '%s\n' \
+  '<type>(<scope>): <subject>' '' \
+  '<body 第一行>' '<body 第二行>' > /tmp/commitron_msg.txt
+git commit --only -F /tmp/commitron_msg.txt -- <specific-files>
+```
+
+**顺序关键**：所有 flag（`-F <path>`）必须放在 `--` **之前**。`--` 之后的所有 token
+都会被 git 当作 pathspec，若写成 `-- <files> -F ...` 会得到
+`pathspec '-F' did not match`。注意这和第 2 步 untracked 的报错**长得像但原因不同**：
+看未匹配的 token 是 `'-F'`（flag 放错位置）还是真实文件名（需要先 `git add`）。
+
+#### 4. 拆分 hunk（少数场景，且与 --only 互斥）
+
+`git commit --only -- <file>` 提交的是文件的**工作区全量**版本，会**静默丢弃**已暂存的
+部分 hunk。要拆 hunk 必须暂存到 index 后用**裸** `git commit`（不带 `--only`/不带
+pathspec），再清理 index：
 
 ```bash
 git diff <file> | filterdiff --hunks=<需要的hunk编号> | git apply --cached
-git commit -F - <<'EOF'
-<type>(<scope>): <subject>
-
-<body>
-EOF
+git commit -F /tmp/commitron_msg.txt
 git reset HEAD -- <file>
 ```
 
-#### 3. Commit Message 格式
+实践中拆 hunk 常不可行：同一 hunk 混了多个关注点、拆开会编译不过时，优先合并提交并在
+body 里注明，不要硬拆。
+
+#### 5. 验真
+
+提交后确认落地（并发下 ref 可能被改写）：
+
+```bash
+git log --oneline -1
+```
+
+#### 6. Commit Message 格式
 
 ```
 <type>(<scope>): <subject>
@@ -69,7 +94,7 @@ git reset HEAD -- <file>
 - subject: ≤50 字符，不加句号
 - body: 必须有，解释 what 和 why，每行 ≤72 字符
 
-#### 4. 报告
+#### 7. 报告
 
 1. 提交了什么（一行）
 2. 剩余未提交变更（如有）
