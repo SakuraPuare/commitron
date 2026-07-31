@@ -22,7 +22,8 @@ description: 原子提交 — 将当前变更拆分为最小不可再分的 conv
 - 禁止单行 commit（必须有 body）
 - 不加 Co-authored-by 或任何 trailer
 - 不用 `git add .` / `git add -A`；但**允许** `git add -- <具体文件>`，untracked 文件必须先这样纳入 index（见下）
-- 不用 `--no-verify` / `--amend`
+- 不用 `--no-verify`
+- **`--amend` 仅限修正本轮自己刚创建且未推送的提交**（如 message 写错、temp 文件残留导致内容不对）。禁止 amend 他人的或已推送的提交。
 
 ### 执行流程
 
@@ -43,15 +44,26 @@ description: 原子提交 — 将当前变更拆分为最小不可再分的 conv
 git add -- <本单元的untracked文件>
 ```
 
-#### 3. 提交
+#### 3. 提交（两步法）
 
-把 message 写进临时文件用 `-F <path>` 传入，避免 `-F -` + heredoc 的脆弱写法：
+**Step A — 写 message 文件。** 使用 `>|`（force-clobber）避免 zsh noclobber 失败，路径用
+`mktemp` 避免多 agent 碰撞：
 
 ```bash
+MSG=$(mktemp /tmp/commitron_XXXXXX.txt)
 printf '%s\n' \
   '<type>(<scope>): <subject>' '' \
-  '<body 第一行>' '<body 第二行>' > /tmp/commitron_msg.txt
-git commit --only -F /tmp/commitron_msg.txt -- <specific-files>
+  '<body 第一行>' '<body 第二行>' >| "$MSG"
+```
+
+或使用平台文件写入工具（如 Claude Code 的 Write tool），天然有成功/失败反馈。
+
+**Step B — 断言内容正确后再提交。** 读回首行核对 subject，确认无残留/损坏：
+
+```bash
+head -1 "$MSG"  # 核对 subject 行
+git commit --only -F "$MSG" -- <specific-files>
+rm -f "$MSG"
 ```
 
 **顺序关键**：所有 flag（`-F <path>`）必须放在 `--` **之前**。`--` 之后的所有 token
@@ -99,3 +111,13 @@ git log --oneline -1
 1. 提交了什么（一行）
 2. 剩余未提交变更（如有）
 3. 建议下一个原子 commit（如有）
+
+### 错误恢复
+
+**Message 写错（本轮创建、未推送）：** 直接 `git commit --amend -F "$CORRECT_MSG"`。
+
+**commit 命令超时/卡住（>30s 无输出）：**
+1. 中断命令
+2. `git config commit.gpgsign` — 若 true 且无 GPG agent，加 `--no-gpg-sign`
+3. `.git/hooks/pre-commit` — hook 可能阻塞（等 stdin / 耗时检查）
+4. `ls .git/index.lock` — 残留锁说明上次 git 异常退出，确认无并发后删除

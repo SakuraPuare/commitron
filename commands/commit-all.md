@@ -22,7 +22,8 @@ description: 批量原子提交 — 将所有当前变更自动拆分为多个�
 - 禁止单行 commit（必须有 body）
 - 不加 Co-authored-by 或任何 trailer
 - 不用 `git add .` / `git add -A`；但**允许** `git add -- <具体文件>`，untracked 文件必须先这样纳入 index（见下）
-- 不用 `--no-verify` / `--amend`
+- 不用 `--no-verify`
+- **`--amend` 仅限修正本轮自己刚创建且未推送的提交**（如 message 写错）。禁止 amend 他人的或已推送的提交。
 
 ### 执行流程
 
@@ -43,15 +44,21 @@ description: 批量原子提交 — 将所有当前变更自动拆分为多个�
 untracked 文件，先 `git add -- <本单元的untracked文件>`（只 add 本单元，不影响其他
 agent 已暂存内容，隔离性保留）。
 
-**b. 提交。** 把 message 写进临时文件用 `-F <path>` 传入，避免 `-F -` + heredoc 的
-脆弱写法：
+**b. 提交（两步法）。** 先写 message 文件，断言内容正确，再 commit。使用 `>|`（force-clobber）
+避免 zsh noclobber 失败，路径用 `mktemp` 避免多 agent 碰撞：
 
 ```bash
+MSG=$(mktemp /tmp/commitron_XXXXXX.txt)
 printf '%s\n' \
   '<type>(<scope>): <subject>' '' \
-  '<body 第一行>' '<body 第二行>' > /tmp/commitron_msg.txt
-git commit --only -F /tmp/commitron_msg.txt -- <specific-files>
+  '<body 第一行>' '<body 第二行>' >| "$MSG"
+head -1 "$MSG"  # 断言 subject 行正确
+git commit --only -F "$MSG" -- <specific-files>
+rm -f "$MSG"
 ```
+
+或使用平台文件写入工具（如 Claude Code 的 Write tool）写 message 文件，天然有成功/失败
+反馈，可省略 head -1 核对。
 
 **顺序关键**：所有 flag（`-F <path>`）必须放在 `--` **之前**。`--` 之后的 token 都会被
 当作 pathspec，若写成 `-- <files> -F ...` 会得到 `pathspec '-F' did not match`。注意这和
@@ -97,3 +104,13 @@ git reset HEAD -- <file>
 1. 总共产生了多少个 commit
 2. 每个 commit 的一行摘要（hash + subject）
 3. 剩余未提交变更（如有）
+
+### 错误恢复
+
+**Message 写错（本轮创建、未推送）：** 直接 `git commit --amend -F "$CORRECT_MSG"`。
+
+**commit 命令超时/卡住（>30s 无输出）：**
+1. 中断命令
+2. `git config commit.gpgsign` — 若 true 且无 GPG agent，加 `--no-gpg-sign`
+3. `.git/hooks/pre-commit` — hook 可能阻塞
+4. `ls .git/index.lock` — 残留锁说明上次 git 异常退出，确认无并发后删除
